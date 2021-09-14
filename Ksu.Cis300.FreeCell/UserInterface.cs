@@ -251,7 +251,7 @@ namespace Ksu.Cis300.FreeCell
             }
             while (temp.Count > 0)
             {
-                _regions[(int)CellType.TableauCell][i][s.Count - temp.Count] = 
+                _regions[(int)CellType.TableauCell][i][s.Count - temp.Count] =
                     new Rectangle(x, (int)y, _cardWidth,
                     (int)((1 + (temp.Count - 1) * _minimumVisibleCardPortion) * _cardHeight));
                 g.DrawImage(temp.Pop().Picture, x, y, _cardWidth, _cardHeight);
@@ -268,9 +268,9 @@ namespace Ksu.Cis300.FreeCell
         {
             Graphics g = e.Graphics; // The graphics context on which to draw.
             _regions[(int)CellType.FreeCell] = DrawCells(g, _horizontalOffset, _margins, _upperPadding, 4);
-            _regions[(int)CellType.HomeCell] = DrawCells(g, _horizontalOffset + 4 * _cardWidth + 3 * _upperPadding + _innerPadding, 
+            _regions[(int)CellType.HomeCell] = DrawCells(g, _horizontalOffset + 4 * _cardWidth + 3 * _upperPadding + _innerPadding,
                 _margins, _upperPadding, 4);
-            _regions[(int)CellType.TableauCell] = DrawCells(g, _horizontalOffset, _margins + _cardHeight + _verticalPadding, 
+            _regions[(int)CellType.TableauCell] = DrawCells(g, _horizontalOffset, _margins + _cardHeight + _verticalPadding,
                 _lowerPadding, 8);
             if (uxBoard.Enabled)
             {
@@ -448,7 +448,191 @@ namespace Ksu.Cis300.FreeCell
         /// <param name="count">The number of cards to select.</param>
         private void SelectCell(CellType type, int cell, int count)
         {
-            // Insert code here
+            _selectionCount = count;
+            _selectedCell = cell;
+            _selectedCellType = type;
+            RedrawBoard();
+
+        }
+
+        private void MoveOneCard(Stack<Card> Source, Stack<Card> Destination)
+        {
+
+            Destination.Push(Source.Pop());
+            RedrawBoard();
+        }
+
+        private bool MoveToFreeCell(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
+        {
+            if (Destination.Count == 0 & CardsToMove == 1)
+            {
+                MoveOneCard(Source, Destination);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool MoveToHomeCell(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
+        {
+            if (CardsToMove == 1)
+            {
+                Card Target = Destination.Peek();
+                Card SourceCard = Source.Peek();
+
+                bool SameSuit = (SourceCard.Suit == Target.Suit);
+                bool CorrectRank = (SourceCard.Rank == Target.Rank + 1);
+
+                if (SourceCard.Rank == 1 & Destination.Count == 0)
+                {
+                    MoveOneCard(Source, Destination);
+                    return true;
+                }
+                else if (CorrectRank & SameSuit)
+                {
+                    MoveOneCard(Source, Destination);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool CanMoveToTableua(Card SourceCard, Card Target)
+        {
+
+            bool OppositeColor = (Target.IsRed != SourceCard.IsRed);
+            bool CorrectRank = (SourceCard.Rank == Target.Rank - 1);
+
+            if (OppositeColor & CorrectRank)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool CanAddTableua(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
+        {
+            int Count = 0;
+            Card PreviousCard = null;
+            bool CanMove;
+
+            foreach (Card SourceCard in Source)
+            {
+                if (PreviousCard != null)
+                {
+                    CanMove = CanMoveToTableua(SourceCard, PreviousCard);
+                    if (CanMove == true)
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    
+                }
+                PreviousCard = SourceCard;
+                Count++;
+
+            }
+            return false;
+            
+        }
+
+        private int CountEmptyCells(CellType Type)
+        {
+            int Count = 0;
+            for (int i = 0; i < _board[Convert.ToInt32(Type)].Length; i++)
+            {
+               if (_board[Convert.ToInt32(Type)][i] == null)
+                {
+                    Count++;
+                }
+            }
+            return Count;
+        }
+
+        private Stack<Card> GetEmptyCell(CellType Type, Stack<Card> Exclude)
+        {
+            bool NotExclude;
+            bool IsEmpty;
+
+            if (CountEmptyCells(Type) != 0)
+            {
+                for (int i = 0; i < _board[Convert.ToInt32(Type)].Length; i++)
+                {
+                    NotExclude = (_board[Convert.ToInt32(Type)][i] != Exclude);
+                    IsEmpty = (_board[Convert.ToInt32(Type)][i] == null);
+                    if (NotExclude & IsEmpty)
+                    {
+                        return _board[Convert.ToInt32(Type)][i];
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void MoveSequenceFreeCells(Subproblem subproblem)
+        {
+
+            
+            Stack<Card> Source = subproblem.Source;
+            Stack<Card> Destination = subproblem.Destination;
+            int Length = subproblem.Length;
+            int AvailableTableauCells = subproblem.AvailableTableauCells;
+            Stack<Stack<Card>> MovedToFree = new Stack<Stack<Card>>(Length);
+
+            for (int i = 2; i <= Length; i++)
+            {
+                MovedToFree.Push(GetEmptyCell(0, null));
+                MoveToFreeCell(Source, GetEmptyCell(0, null), 1);
+            }
+            MoveOneCard(Source, Destination);
+            
+            foreach(Stack<Card> stack in MovedToFree)
+            {
+                MoveOneCard(stack, Destination);
+            }
+
+        }
+
+        private void MoveSequenceTableauCell(Stack<Card> Source, Stack<Card> Destination, int EmptyTableau, int EmptyFree, int CardsToMove)
+        {
+            Stack<Subproblem> SubproblemTracker = new Stack<Subproblem>(CardsToMove);
+            Subproblem FirstProblem = new Subproblem(Source, Destination, CardsToMove, EmptyTableau);
+            SubproblemTracker.Push(FirstProblem);
+     
+            while (SubproblemTracker.Peek() != null)
+            {
+                FirstProblem = SubproblemTracker.Pop();
+                if (FirstProblem.Length <= EmptyFree + 1)
+                {
+                    MoveSequenceFreeCells(FirstProblem);
+                }
+                else
+                {
+                    Stack<Card> TempStorage = GetEmptyCell(CellType.TableauCell, FirstProblem.Destination);
+                    for (int i = 0; i < FirstProblem.Length; i++)
+                    {
+                        if (i < FirstProblem.Length/2)
+                        {
+                            MoveOneCard(FirstProblem.Source, TempStorage);
+                        }
+                        else
+                        {
+                            MoveOneCard(FirstProblem.Source, FirstProblem.Destination);
+                        }
+                    }
+                    foreach (Card card in TempStorage)
+                    {
+                        MoveOneCard(TempStorage, FirstProblem.Destination);
+                    }
+                }
+            }
         }
     }
-}
+    }
