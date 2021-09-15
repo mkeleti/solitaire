@@ -49,7 +49,7 @@ namespace Ksu.Cis300.FreeCell
             this.uxMoveHome});
             this.uxToolBar.Location = new System.Drawing.Point(0, 0);
             this.uxToolBar.Name = "uxToolBar";
-            this.uxToolBar.Size = new System.Drawing.Size(800, 34);
+            this.uxToolBar.Size = new System.Drawing.Size(1067, 27);
             this.uxToolBar.TabIndex = 0;
             this.uxToolBar.Text = "toolStrip1";
             // 
@@ -59,14 +59,14 @@ namespace Ksu.Cis300.FreeCell
             this.uxNewGame.Image = ((System.Drawing.Image)(resources.GetObject("uxNewGame.Image")));
             this.uxNewGame.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.uxNewGame.Name = "uxNewGame";
-            this.uxNewGame.Size = new System.Drawing.Size(102, 29);
+            this.uxNewGame.Size = new System.Drawing.Size(86, 24);
             this.uxNewGame.Text = "New Game";
             this.uxNewGame.Click += new System.EventHandler(this.uxNewGame_Click);
             // 
             // uxGameLabel
             // 
             this.uxGameLabel.Name = "uxGameLabel";
-            this.uxGameLabel.Size = new System.Drawing.Size(132, 29);
+            this.uxGameLabel.Size = new System.Drawing.Size(109, 24);
             this.uxGameLabel.Text = "Game Number:";
             // 
             // uxMoveHome
@@ -77,12 +77,14 @@ namespace Ksu.Cis300.FreeCell
             this.uxMoveHome.Image = ((System.Drawing.Image)(resources.GetObject("uxMoveHome.Image")));
             this.uxMoveHome.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.uxMoveHome.Name = "uxMoveHome";
-            this.uxMoveHome.Size = new System.Drawing.Size(140, 29);
+            this.uxMoveHome.Size = new System.Drawing.Size(117, 24);
             this.uxMoveHome.Text = "Move All Home";
+            this.uxMoveHome.Click += new System.EventHandler(this.uxMoveHome_Click);
             // 
             // uxGameNumber
             // 
-            this.uxGameNumber.Location = new System.Drawing.Point(169, 3);
+            this.uxGameNumber.Location = new System.Drawing.Point(225, 4);
+            this.uxGameNumber.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.uxGameNumber.Maximum = new decimal(new int[] {
             1000000,
             0,
@@ -94,7 +96,7 @@ namespace Ksu.Cis300.FreeCell
             0,
             0});
             this.uxGameNumber.Name = "uxGameNumber";
-            this.uxGameNumber.Size = new System.Drawing.Size(67, 20);
+            this.uxGameNumber.Size = new System.Drawing.Size(89, 22);
             this.uxGameNumber.TabIndex = 1;
             this.uxGameNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.uxGameNumber.Value = new decimal(new int[] {
@@ -108,10 +110,10 @@ namespace Ksu.Cis300.FreeCell
             this.uxBoard.BackColor = System.Drawing.Color.DarkGreen;
             this.uxBoard.Dock = System.Windows.Forms.DockStyle.Fill;
             this.uxBoard.Enabled = false;
-            this.uxBoard.Location = new System.Drawing.Point(0, 34);
+            this.uxBoard.Location = new System.Drawing.Point(0, 27);
             this.uxBoard.Margin = new System.Windows.Forms.Padding(1);
             this.uxBoard.Name = "uxBoard";
-            this.uxBoard.Size = new System.Drawing.Size(800, 416);
+            this.uxBoard.Size = new System.Drawing.Size(1067, 527);
             this.uxBoard.TabIndex = 2;
             this.uxBoard.Paint += new System.Windows.Forms.PaintEventHandler(this.uxBoard_Paint);
             this.uxBoard.MouseClick += new System.Windows.Forms.MouseEventHandler(this.uxBoard_MouseClick);
@@ -119,13 +121,14 @@ namespace Ksu.Cis300.FreeCell
             // 
             // UserInterface
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1067, 554);
             this.Controls.Add(this.uxBoard);
             this.Controls.Add(this.uxGameNumber);
             this.Controls.Add(this.uxToolBar);
             this.DoubleBuffered = true;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "UserInterface";
             this.Text = "FreeCell";
             this.uxToolBar.ResumeLayout(false);

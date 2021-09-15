@@ -1,5 +1,6 @@
 ﻿/* UserInterface.cs
  * Author: Rod Howell
+ * Modified: Michael Keleti
  */
 using System;
 using System.Collections.Generic;
@@ -448,114 +449,177 @@ namespace Ksu.Cis300.FreeCell
         /// <param name="count">The number of cards to select.</param>
         private void SelectCell(CellType type, int cell, int count)
         {
-            _selectionCount = count;
-            _selectedCell = cell;
-            _selectedCellType = type;
+            if (_selectionCount > 0)
+            {
+                Console.WriteLine("Destination Selected");
+                SelectDestination(type, cell, count);
+            }
+            else if (type != CellType.HomeCell && _board[Convert.ToInt32(type)][cell].Count > 0)
+            {
+                Console.WriteLine("Cell Selected");
+                _selectionCount = count;
+                _selectedCell = cell;
+                _selectedCellType = type;
+            }
             RedrawBoard();
 
         }
-
+        /// <summary>
+        /// Moves a single card.
+        /// </summary>
+        /// <param name="Source">Stack of Cards to Move</param>
+        /// <param name="Destination">Stack of Cards to Move to</param>
         private void MoveOneCard(Stack<Card> Source, Stack<Card> Destination)
         {
-
+            Console.WriteLine("Card Moved");
             Destination.Push(Source.Pop());
             RedrawBoard();
         }
-
+        /// <summary>
+        /// Moves a card to a free cell
+        /// </summary>
+        /// <param name="Source">Stack of Cards to Move</param>
+        /// <param name="Destination">Stack of Cards to Move to</param>
+        /// <param name="CardsToMove">Number of cards to move</param>
+        /// <returns>Wether or not it is a legal move</returns>
         private bool MoveToFreeCell(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
         {
-            if (Destination.Count == 0 & CardsToMove == 1)
+            if (Destination.Count == 0 && CardsToMove == 1)
             {
                 MoveOneCard(Source, Destination);
                 return true;
             }
             else
             {
+                Console.WriteLine("Move to Free Cell False");
                 return false;
             }
         }
-
+        /// <summary>
+        /// Moves a single card to a home cell.
+        /// </summary>
+        /// <param name="Source">Stack of Cards to Move</param>
+        /// <param name="Destination">Stack of Cards to Move to</param>
+        /// <param name="CardsToMove">Number of cards to move</param>
+        /// <returns>Wether or not it is a legal move</returns>
         private bool MoveToHomeCell(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
         {
+            Card SourceCard = Source.Peek();
             if (CardsToMove == 1)
             {
-                Card Target = Destination.Peek();
-                Card SourceCard = Source.Peek();
-
-                bool SameSuit = (SourceCard.Suit == Target.Suit);
-                bool CorrectRank = (SourceCard.Rank == Target.Rank + 1);
-
-                if (SourceCard.Rank == 1 & Destination.Count == 0)
+                if (Destination.Count != 0)
                 {
-                    MoveOneCard(Source, Destination);
-                    return true;
+                    Console.WriteLine("Move to Home Cell Condition 1.1 met");
+                    bool SameSuit = (Source.Peek().Suit == Destination.Peek().Suit);
+                    bool CorrectRank = (Source.Peek().Rank == Destination.Peek().Rank + 1);
+
+                    if (CorrectRank && SameSuit)
+                    {
+                        MoveOneCard(Source, Destination);
+                        Console.WriteLine("Move to Home Cell Condition 1.2 met");
+                        return true;
+                    }
                 }
-                else if (CorrectRank & SameSuit)
+                else if (SourceCard.Rank == 1)
                 {
                     MoveOneCard(Source, Destination);
+                    Console.WriteLine("Move to Home Cell Condition 2 met");
                     return true;
                 }
             }
+            Console.WriteLine("Move to Home Cell False");
             return false;
         }
-
+        /// <summary>
+        /// Determines if you can move a single card to a Tableua Cell
+        /// </summary>
+        /// <param name="SourceCard">Card to Move</param>
+        /// <param name="Target">Card to Move to</param>
+        /// <returns></returns>
         private bool CanMoveToTableua(Card SourceCard, Card Target)
         {
 
-            bool OppositeColor = (Target.IsRed != SourceCard.IsRed);
+            bool OppositeColor = (Target.IsRed ^ SourceCard.IsRed);
             bool CorrectRank = (SourceCard.Rank == Target.Rank - 1);
 
-            if (OppositeColor & CorrectRank)
+            if (OppositeColor && CorrectRank)
             {
+                Console.WriteLine("Can move Tableau True");
                 return true;
             }
             else
             {
+                Console.WriteLine("Can move Tableau False");
+                Console.WriteLine(OppositeColor);
+                Console.WriteLine(SourceCard.Rank);
+                Console.WriteLine(Target.Rank);
+                Console.WriteLine(CorrectRank);
                 return false;
             }
         }
-
+        /// <summary>
+        /// Determines if you can move a Stack of Cards to a destination cell in a certain ammount of moves
+        /// </summary>
+        /// <param name="Source">Stack of Cards to Move</param>
+        /// <param name="Destination">Stack of Cards to Move to</param>
+        /// <param name="CardsToMove">Number of cards to move</param>
+        /// <returns>A bool determining if it is a legal move or not</returns>
         private bool CanAddTableua(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
         {
             int Count = 0;
             Card PreviousCard = null;
             bool CanMove;
-
+            Console.WriteLine(CardsToMove);
             foreach (Card SourceCard in Source)
             {
-                if (PreviousCard != null)
+                Count++;
+                if (Count < CardsToMove && PreviousCard != null)
                 {
-                    CanMove = CanMoveToTableua(SourceCard, PreviousCard);
-                    if (CanMove == true)
+                    Console.WriteLine("Can add Tableau Condition 1.1 met");
+                    CanMove = CanMoveToTableua(PreviousCard, SourceCard);
+                    if (!CanMove)
                     {
-                        return true;
+                        Console.WriteLine("Can add Tableau Condition 1.2 met");
+                        return false;
                     }
                 }
-                else
+                else if (CardsToMove == Count && (Destination.Count == 0 || CanMoveToTableua(SourceCard, Destination.Peek())))
                 {
-                    
+                    Console.WriteLine("Can add Tableau Condition 2 met");
+                    return true;
                 }
                 PreviousCard = SourceCard;
-                Count++;
-
             }
+            Console.WriteLine("Can Add Tableua False");
+            Console.WriteLine("Cards to move:" + CardsToMove + " Count: " + Count);
+            
             return false;
             
         }
-
+        /// <summary>
+        /// Counts the amount of empty cells of a given type
+        /// </summary>
+        /// <param name="Type">The type of the selected cell</param>
+        /// <returns>return the counted Empty Cells</returns>
         private int CountEmptyCells(CellType Type)
         {
             int Count = 0;
             for (int i = 0; i < _board[Convert.ToInt32(Type)].Length; i++)
             {
-               if (_board[Convert.ToInt32(Type)][i] == null)
+               if (_board[Convert.ToInt32(Type)][i].Count == 0)
                 {
                     Count++;
                 }
             }
+            Console.WriteLine("Empty Cells: " + Count);
             return Count;
         }
-
+        /// <summary>
+        /// Gets empty cells of a given type returns them.
+        /// </summary>
+        /// <param name="Type">The selected cell type</param>
+        /// <param name="Exclude">What cells to exclude</param>
+        /// <returns>Returns the empty cell</returns>
         private Stack<Card> GetEmptyCell(CellType Type, Stack<Card> Exclude)
         {
             bool NotExclude;
@@ -566,16 +630,21 @@ namespace Ksu.Cis300.FreeCell
                 for (int i = 0; i < _board[Convert.ToInt32(Type)].Length; i++)
                 {
                     NotExclude = (_board[Convert.ToInt32(Type)][i] != Exclude);
-                    IsEmpty = (_board[Convert.ToInt32(Type)][i] == null);
-                    if (NotExclude & IsEmpty)
+                    IsEmpty = (_board[Convert.ToInt32(Type)][i].Count == 0);
+                    if (NotExclude && IsEmpty)
                     {
+
                         return _board[Convert.ToInt32(Type)][i];
                     }
                 }
             }
+            Console.WriteLine("Get Empty Cells returned null");
             return null;
         }
-
+        /// <summary>
+        /// Moves a sequence of free cells
+        /// </summary>
+        /// <param name="subproblem">Selected subproblem to use for sequence</param>
         private void MoveSequenceFreeCells(Subproblem subproblem)
         {
 
@@ -599,37 +668,199 @@ namespace Ksu.Cis300.FreeCell
             }
 
         }
-
+        /// <summary>
+        /// Move a Sequence to Tableau Cells
+        /// </summary>
+        /// <param name="Source">The Source cell to transfer from</param>
+        /// <param name="Destination">Cell to transfer to</param>
+        /// <param name="EmptyTableau">Number of empty tableau's</param>
+        /// <param name="EmptyFree">How many empty free cells</param>
+        /// <param name="CardsToMove">How many cards to move</param>
         private void MoveSequenceTableauCell(Stack<Card> Source, Stack<Card> Destination, int EmptyTableau, int EmptyFree, int CardsToMove)
         {
             Stack<Subproblem> SubproblemTracker = new Stack<Subproblem>(CardsToMove);
             Subproblem FirstProblem = new Subproblem(Source, Destination, CardsToMove, EmptyTableau);
             SubproblemTracker.Push(FirstProblem);
      
-            while (SubproblemTracker.Peek() != null)
+            while (SubproblemTracker.Count() > 0)
             {
+                
                 FirstProblem = SubproblemTracker.Pop();
                 if (FirstProblem.Length <= EmptyFree + 1)
                 {
+                    Console.WriteLine("Tableau Cell Sequence condition 1");
                     MoveSequenceFreeCells(FirstProblem);
                 }
                 else
                 {
+                    Console.WriteLine("Tableau Cell Sequence condition 2");
                     Stack<Card> TempStorage = GetEmptyCell(CellType.TableauCell, FirstProblem.Destination);
-                    for (int i = 0; i < FirstProblem.Length; i++)
+                    Subproblem HalfProblem = new Subproblem(Source, TempStorage, FirstProblem.Length / 2, EmptyTableau);
+                    Subproblem RestProblem = new Subproblem(Source, FirstProblem.Destination, FirstProblem.Length / 2, EmptyTableau);
+                    Subproblem EmptyTemp = new Subproblem(TempStorage, FirstProblem.Destination, FirstProblem.Length /2, EmptyTableau);
+                    SubproblemTracker.Push(EmptyTemp);
+                    SubproblemTracker.Push(RestProblem);
+                    SubproblemTracker.Push(HalfProblem);
+                   
+                }
+            }
+        }
+        /// <summary>
+        /// Moves a sequence to the Tableau while checking that the move is legal.
+        /// </summary>
+        /// <param name="Source">Source cell to transfer from</param>
+        /// <param name="Destination">Destination cell to transfer to</param>
+        /// <param name="CardsToMove">How many cards to move</param>
+        /// <returns></returns>
+        private bool MoveToTableau(Stack<Card> Source, Stack<Card> Destination, int CardsToMove)
+        {
+            int EmptyFreeCells = CountEmptyCells(CellType.FreeCell);
+            int EmptyTableauCells = CountEmptyCells(CellType.TableauCell);
+
+            if (Destination.Count() == 0)
+            {
+                EmptyTableauCells -= 1;
+            }
+            int value = (1 << EmptyTableauCells) * (EmptyFreeCells + 1);
+            if (CardsToMove > value)
+            {
+                Console.Write("Move To Tableau Calculation Exception");
+                return false;
+            }
+            else if (!CanAddTableua(Source, Destination, CardsToMove))
+            {
+                Console.Write("Move To Tableau Can Add Tableau Exception");
+                return false;
+            }
+            else
+            {
+                MoveSequenceTableauCell(Source, Destination, EmptyTableauCells, EmptyFreeCells, CardsToMove);
+                return true;
+            }
+        }
+        /// <summary>
+        /// Makes a play to move selected cards to their destination
+        /// </summary>
+        /// <param name="Source">Source of cards</param>
+        /// <param name="Destination">Destination for cards</param>
+        /// <param name="TargetType">Type of cell for Destination</param>
+        /// <param name="CardsToMove">How many Cards to move</param>
+        /// <returns></returns>
+        private bool MakePlay(Stack<Card> Source, Stack<Card> Destination, CellType TargetType, int CardsToMove)
+        {
+            if (TargetType == CellType.FreeCell)
+            {
+                return MoveToFreeCell(Source, Destination, CardsToMove);
+            }
+            else if (TargetType == CellType.HomeCell)
+            {
+                return MoveToHomeCell(Source, Destination, CardsToMove);
+            }
+            else if (TargetType == CellType.TableauCell)
+            {
+                return MoveToTableau(Source, Destination, CardsToMove);
+            }
+            else
+            {
+                Console.WriteLine("No Type");
+                return false;
+            }
+        }
+        /// <summary>
+        /// Checks to see if the player has won the game
+        /// </summary>
+        private void CheckWin()
+        {
+            foreach (Stack<Card> card in _board[Convert.ToInt32(CellType.HomeCell)])
+            {
+                if (card.Count != 13)
+                {
+                    return;
+                }
+            }
+            uxMoveHome.Enabled = false;
+            MessageBox.Show("You win!");
+        }
+        /// <summary>
+        /// Selects a destination cell and moves the selected cards to that cell
+        /// </summary>
+        /// <param name="Type">Type of cell being moved to</param>
+        /// <param name="CellIndex">Index of destination cell</param>
+        /// <param name="CardsSelected">How many cards are selected</param>
+        private void SelectDestination(CellType Type, int CellIndex, int CardsSelected)
+        {
+            bool TypeCheck = (Type == _selectedCellType);
+            bool IndexCheck = (CellIndex == _selectedCell);
+            bool CountCheck = (CardsSelected == _selectionCount);
+
+            if (TypeCheck && IndexCheck && CountCheck)
+            {
+                _selectionCount = 0;
+            }
+            else
+            {
+                int LastCount = _selectionCount;
+                _selectionCount = 0;
+                bool Checksum = MakePlay(_board[Convert.ToInt32(_selectedCellType)][_selectedCell], _board[Convert.ToInt32(Type)][CellIndex], Type, LastCount);
+                if (Checksum == true)
+                {
+                    CheckWin();
+                }
+                else if (Checksum == false) {
+                    MessageBox.Show("Invalid play");
+                }
+            }
+        }
+        /// <summary>
+        /// Checks to see if the source cell isnt empty and then moves the rest to the home cells
+        /// </summary>
+        /// <param name="Source">The source cells we are transfering from</param>
+        /// <param name="Destination">The destination cells we are transfering to</param>
+        /// <returns></returns>
+        private bool MoveToHome(Stack<Card>[] Source, Stack<Card> Destination)
+        {
+            bool returnValue;
+            foreach (Stack<Card> stacks in Source)
+            {
+                if (stacks.Count > 0)
+                {
+                    returnValue = MoveToHomeCell(stacks, Destination, 1);
+                    if (returnValue)
                     {
-                        if (i < FirstProblem.Length/2)
-                        {
-                            MoveOneCard(FirstProblem.Source, TempStorage);
-                        }
-                        else
-                        {
-                            MoveOneCard(FirstProblem.Source, FirstProblem.Destination);
-                        }
+                        return true;
                     }
-                    foreach (Card card in TempStorage)
+                }
+            }
+            Console.WriteLine("Move to Home Exception");
+            return false;
+        }
+        /// <summary>
+        /// Triggers the event for the "Move all Home" button and moves any possible cardws that can go into home into home
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void uxMoveHome_Click(object sender, EventArgs e)
+        {
+            _selectionCount = 0;
+            bool CardMove = true;
+            while (CardMove)
+            {
+                CardMove = false;
+                bool checksum;
+                foreach (Stack<Card> homecell in _board[Convert.ToInt32(CellType.HomeCell)])
+                {
+                    checksum = MoveToHome(_board[Convert.ToInt32(CellType.FreeCell)], homecell);
+                    if (checksum)
                     {
-                        MoveOneCard(TempStorage, FirstProblem.Destination);
+                        CardMove = true;
+                    }
+                    else
+                    {
+                        checksum = MoveToHome(_board[Convert.ToInt32(CellType.TableauCell)], homecell);
+                        if (checksum)
+                        {
+                            CardMove = true;
+                        }
                     }
                 }
             }
