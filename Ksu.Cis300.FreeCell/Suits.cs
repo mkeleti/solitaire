@@ -1,5 +1,6 @@
 ﻿/* Suits.cs
  * Author: Rod Howell
+ * Modified By: Michael Keleti
  */
 using System;
 using System.Collections.Generic;
